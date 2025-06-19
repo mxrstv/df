@@ -1,0 +1,41 @@
+-- Список продукции
+select
+	p.id as id,
+	p.name as name,
+	p.articul as articul,
+	p.min_price as price,
+	pt.name as type,
+	mt.name as material,
+	total_time
+from products p
+left join product_types pt on p.product_types_id = pt.id
+left join material_types mt on p.material_types_id = mt.id
+left join (
+	select wsp.products_id as pid, sum(prod_time) as total_time
+	from workshop_products wsp
+	group by wsp.products_id
+) on p.id = pid
+order by name;
+
+
+select wsp.products_id as wsp_pid, sum(prod_time) as total_time
+from workshop_products wsp
+group by wsp.products_id;
+
+
+-- нагрузка на цеха
+select ws.id as id, ws.name as name, wst.name as type,
+	   ws.people as people, sum(wsp.prod_time) as payload,
+	   people*8 as max_payload, people*8 - sum(wsp.prod_time) as free_payload
+from workshops ws
+left join workshop_types wst on ws.workshop_types_id = wst.id
+left join workshop_products wsp on ws.id = wsp.workshops_id
+group by ws.id, ws.name, wst.name, ws.people
+order by name;
+
+-- стоимость продукции с учетом коэффициентов
+select p.id, p.name, p.min_price*mt.bad_percent*pt.k as total_price
+from products p
+left join material_types mt on p.material_types_id = mt.id
+left join product_types pt on p.product_types_id = pt.id;
+
